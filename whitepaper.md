@@ -142,4 +142,8 @@ Contact
 
 For questions, academic collaboration, or contributions:
 Raven Wilson
-GitHub Repo
+
+## 🔗 GitHub Repository
+
+You can explore the full source code and contribute to the project on GitHub:  
+[https://github.com/Raventune/Axiom_ai](https://github.com/Raventune/Axiom_ai)
