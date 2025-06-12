@@ -1,3 +1,89 @@
+
+---
+
+## **memory_agent.py**
+
+```python
+"""
+memory_agent.py
+
+Defines the MemoryAgent class responsible for scalable, weighted memory management
+for the AI system. Supports two primary types of memory:
+
+1. Vector Memory:
+   - Stores numeric vector representations of memories.
+   - Supports decay and reinforcement mechanisms to simulate fading or strengthening
+     of memories over time.
+   - Provides recall and averaging functions for aggregate memory insights.
+
+2. Event Memory:
+   - Logs discrete events with timestamps, types, details, and programmable weights.
+   - Supports querying recent events within a time window.
+   - Implements decay on event weights to reduce importance over time.
+   - Supports saving event logs to CSV for persistence and external analysis.
+   - Provides summary statistics and pattern detection (histograms) on logged events.
+
+Additionally, the MemoryAgent is designed for extensibility and scalability, allowing
+integration of multi-format data (e.g., narratives, images with metadata) for rich memory
+representation.
+
+Classes:
+--------
+MemoryAgent
+    Core memory management class supporting vector and event memories with weighted
+    logging and decay.
+
+Key Methods:
+------------
+- store_memory(memory_vector: np.ndarray)
+    Adds a vector memory to the fixed-capacity memory bank.
+
+- recall_memories() -> List[np.ndarray]
+    Returns a list of current memories with decay applied.
+
+- reinforce_memory(index: int)
+    Strengthens a specific memory vector by increasing its weight.
+
+- average_memory() -> np.ndarray
+    Computes the average vector of all recalled memories.
+
+- log_event(event_type: str, detail: str, weight: float = 1.0)
+    Logs a weighted event with timestamp and details.
+
+- get_recent_events(window_seconds: int = 60) -> List[dict]
+    Retrieves events from the event log within a recent time window.
+
+- decay_event_log(decay_rate: float = 0.005)
+    Applies decay to event weights and purges negligible events.
+
+- save_event_log_csv(filename: str)
+    Saves the event log to a CSV file.
+
+- get_event_summary(window_seconds: int = 300) -> dict
+    Returns counts of success, failure, and other events in recent history.
+
+- weighted_success_failure_ratio(window_seconds: int = 300) -> float
+    Calculates a weighted ratio indicating success vs failure dominance.
+
+Usage:
+------
+Create a MemoryAgent instance to store and query AI experiences. Use event logging
+to track outcomes and vector memory to retain abstracted knowledge.
+
+Example:
+--------
+```python
+from memory_agent import MemoryAgent
+import numpy as np
+
+memory = MemoryAgent()
+memory.store_memory(np.array([0.1, 0.2, 0.3, 0.4, 0.5]))
+memory.log_event("interaction", "success", weight=2.0)
+summary = memory.get_event_summary()
+print(summary)
+
+"""
+
 import os
 import time
 import json
