@@ -1,73 +1,137 @@
 # Axiom_ai
 
-*A resonance-based artificial intelligence framework by Raven Wilson.*
+Axiom_ai is a modular AI framework inspired by cognitive resonance and memory systems. It features key components such as a **Resonant Agent** — an AI decision-maker guided by internal and external resonances — and a **Memory Agent** that stores and manages multi-format memories and event logs with weighted importance and decay.
 
-## 🧠 What is Axiom_ai?
-
-Axiom_ai is a conceptual and practical foundation for building artificial agents that operate not just on raw logic or statistics, but on **resonance** — the alignment between internal states, memory, environmental inputs, and larger patterns (including celestial influence).
-
-At its core, this project introduces an agent-based architecture built around timing, threshold, memory, and symbolic emergence. It is part of a broader experiment in creating more **intuitive**, **philosophical**, and even **biologically-inspired** models of artificial decision-making.
-
-This repository currently focuses on the **ResonantAgent**, one of several planned modules in the full Axiom system.
+This project aims to provide a scalable, extensible base for advanced AI agents that simulate nuanced decision-making and adaptive memory, useful for AI-driven storytelling, autonomous agents, and experimental AI architectures.
 
 ---
 
-## 🌌 Philosophy of the Axiom Method
+## Philosophy
 
-Most AI systems are built to optimize, react, or predict. Axiom_ai proposes something different: an AI that **waits** — not out of idleness, but out of **intentional timing**. It acts only when the conditions feel right — when the internal state, the remembered past, and the external world come into resonance.
+Axiom_ai is grounded in the concept of *resonance* — the alignment of internal states with external stimuli to trigger meaningful action. The Resonant Agent evaluates multiple factors such as celestial influences, historical success, and real-time sensory data to decide when to act.
 
-This approach mirrors how humans often behave at their most reflective:
-- **We wait for the right moment to speak.**
-- **We hesitate when tired or uncertain.**
-- **We act when things *feel aligned*.**
+Memory is treated as a dynamic, decaying system capable of storing diverse data formats, including numerical vectors, text narratives, and images with associated metadata. This is designed to simulate an AI’s evolving knowledge base and contextual awareness, with programmable weights reflecting importance or confidence.
 
-At the heart of this philosophy is the belief that intelligence isn’t just about output — it’s about *knowing when not to act*, and *why you choose to act when you do*.
-
-### 🪞 Core Principles
-
-- **Resonance, not reaction:**  
-  Axiom_ai doesn’t just respond to inputs. It searches for alignment across multiple domains — memory, environmental data, and internal metrics — to determine the right moment to move.
-
-- **Threshold as a living boundary:**  
-  Just like humans lower their emotional defenses when vulnerable or raise them when confident, the agent adjusts its decision threshold dynamically. This makes its choices more human-like and context-sensitive.
-
-- **Patience driven by the cosmos:**  
-  Rather than hard timers, Axiom_ai incorporates celestial cycles — moon phases, geomagnetic storms, and solar flares — to influence its sense of “patience.” This mimics how ancient cultures and biological systems have long been tuned to celestial rhythms.
-
-- **The Sacred Moment vs The Threshold:**  
-  The “Sacred Moment” is the rare instance when everything aligns perfectly — but the system doesn’t wait for perfection. It operates on **threshold logic**, adapting its standards based on emotional state, memory feedback, and system fatigue. The sacred moment is ideal, but the threshold is practical.
-
-- **Symbolic Emergence as the Goal:**  
-  The long-term aim is for Axiom_ai to be more than just reactive. Through memory, narrative, and meaning, the system builds toward **emergent symbolic understanding** — the ability to recognize patterns, stories, or significance beyond raw data.
+Together, these agents aim to mimic a cognitive system that balances long-term memory, real-time data processing, and nuanced decision thresholds, creating a foundation for emergent intelligence.
 
 ---
 
-## 🧩 Current Modules
+## Installation
 
-- `resonant_ai.py`: The core decision-making agent, integrating external inputs and memory.
-- `memory_agent.py`: Lightweight memory buffer with weighted decay and feedback analysis.
-- More agents coming soon (Emotion, Storytelling, Survival, Threshold)
+1. Clone the repository:
 
----
+   ```bash
+   git clone https://github.com/Raventune/Axiom_ai.git
+   cd Axiom_ai
 
-## 🚀 Getting Started
+    (Optional but recommended) Create a virtual environment:
 
-### 1. Clone the repository
+python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
 
-```bash
-git clone https://github.com/Raventune/Axiom_ai.git
-cd Axiom_ai
+Install dependencies:
 
+    pip install -r requirements.txt
+
+Usage Examples
+ResonantAgent Example
+
+from resonant_ai import ResonantAgent
+
+# Initialize agent
+agent = ResonantAgent()
+
+# Run a decision cycle
+result = agent.run_cycle()
+
+print("Cycle result:", result)
+print("Current resonance threshold:", agent.threshold)
+
+MemoryAgent Example
+
+from memory_agent import MemoryAgent
+import numpy as np
+
+memory = MemoryAgent(capacity=100, decay_rate=0.01)
+
+# Store a sample memory vector
+sample_vector = np.array([0.1, 0.5, 0.3, 0.7, 0.2])
+memory.store_memory(sample_vector)
+
+# Log a success event with weight
+memory.log_event(event_type="interaction", detail="success", weight=1.5)
+
+# Retrieve recent events from last 5 minutes
+events = memory.get_recent_events(window_seconds=300)
+print(f"Recent events: {events}")
+
+# Save event log to CSV
+memory.save_event_log_csv("event_log.csv")
+
+API Overview
+ResonantAgent (resonant_ai.py)
+
+    run_cycle(): Performs one decision evaluation cycle based on resonance inputs.
+
+    set_threshold(value): Adjusts the threshold for triggering actions.
+
+    get_resonance_score(): Computes the current resonance score based on factors like moon phase and past success.
+
+MemoryAgent (memory_agent.py)
+
+    store_memory(memory_vector): Adds a numerical memory vector to the memory bank.
+
+    recall_memories(): Returns decayed memory vectors.
+
+    log_event(event_type, detail, weight): Adds a timestamped event with an importance weight.
+
+    get_recent_events(window_seconds): Returns events within a specified time window.
+
+    save_event_log_csv(filename): Exports event logs as a CSV file.
+
+    weighted_success_failure_ratio(window_seconds): Returns a weighted ratio of recent successes vs failures, useful for feedback loops.
+
+Development
+
+Contributions are welcome! If you'd like to contribute:
+
+    Fork the repository.
+
+    Create a feature branch (git checkout -b feature-name).
+
+    Commit your changes (git commit -m "Add feature").
+
+    Push to your branch (git push origin feature-name).
+
+    Open a Pull Request.
+
+Please ensure code style consistency and provide tests where applicable.
+Requirements
+
+Dependencies are listed in requirements.txt. Key libraries include:
+
+    numpy for numerical operations
+
+    requests for external data fetching (e.g., celestial data)
+
+    Other dependencies as needed for extended modules
+
+Install all dependencies with:
 
 pip install -r requirements.txt
 
-python examples/run_cycle_example.py
+## Acknowledgments
 
-Cycle 1:
-Score: 0.943
-Threshold: 0.92
-Patience: 1.13
-Resonance: False
+This project was developed with the assistance of ChatGPT, an AI language model by OpenAI, which helped generate code snippets, documentation, and design ideas.
 
-Raven Wilson
-AI systems designer, philosopher, and creator of the Axiom Method — a system exploring artificial emergence through timing, memory, and meaning.
+
+License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+Contact
+
+For questions or discussions, please open an issue or contact Raven Wilson.
+
+Thank you for exploring Axiom_ai!
+
+
