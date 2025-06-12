@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Raventune/Axiom_ai: Initial Release of Axiom AI Modules"
+version: "1.0.0"
+doi: "10.5281/zenodo.15650859"
+authors:
+  - family-names: "Raven"
+    given-names: ""
+date-released: 2025-06-12
+url: "https://doi.org/10.5281/zenodo.15650859"
