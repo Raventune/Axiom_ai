@@ -12,13 +12,33 @@ This repository currently focuses on the **ResonantAgent**, one of several plann
 
 ---
 
-## 🔁 Core Concepts
+## 🌌 Philosophy of the Axiom Method
 
-- **Resonance:** Decisions are only made when a combination of internal and external conditions "line up."
-- **Sacred Moment:** A rare alignment of factors where action is optimal — though it may never come.
-- **Thresholds:** The system adapts its sensitivity based on memory of success/failure, fatigue, emotional weight, or outside inputs.
-- **Celestial Influence:** Uses real-time moon phase, solar activity, and geomagnetic data to affect pacing and internal states.
-- **Symbolic Emergence:** Future modules will include storytelling, survival behavior, and emotion systems that build meaning over time.
+Most AI systems are built to optimize, react, or predict. Axiom_ai proposes something different: an AI that **waits** — not out of idleness, but out of **intentional timing**. It acts only when the conditions feel right — when the internal state, the remembered past, and the external world come into resonance.
+
+This approach mirrors how humans often behave at their most reflective:
+- **We wait for the right moment to speak.**
+- **We hesitate when tired or uncertain.**
+- **We act when things *feel aligned*.**
+
+At the heart of this philosophy is the belief that intelligence isn’t just about output — it’s about *knowing when not to act*, and *why you choose to act when you do*.
+
+### 🪞 Core Principles
+
+- **Resonance, not reaction:**  
+  Axiom_ai doesn’t just respond to inputs. It searches for alignment across multiple domains — memory, environmental data, and internal metrics — to determine the right moment to move.
+
+- **Threshold as a living boundary:**  
+  Just like humans lower their emotional defenses when vulnerable or raise them when confident, the agent adjusts its decision threshold dynamically. This makes its choices more human-like and context-sensitive.
+
+- **Patience driven by the cosmos:**  
+  Rather than hard timers, Axiom_ai incorporates celestial cycles — moon phases, geomagnetic storms, and solar flares — to influence its sense of “patience.” This mimics how ancient cultures and biological systems have long been tuned to celestial rhythms.
+
+- **The Sacred Moment vs The Threshold:**  
+  The “Sacred Moment” is the rare instance when everything aligns perfectly — but the system doesn’t wait for perfection. It operates on **threshold logic**, adapting its standards based on emotional state, memory feedback, and system fatigue. The sacred moment is ideal, but the threshold is practical.
+
+- **Symbolic Emergence as the Goal:**  
+  The long-term aim is for Axiom_ai to be more than just reactive. Through memory, narrative, and meaning, the system builds toward **emergent symbolic understanding** — the ability to recognize patterns, stories, or significance beyond raw data.
 
 ---
 
@@ -35,8 +55,9 @@ This repository currently focuses on the **ResonantAgent**, one of several plann
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Raventune/Axiom_ai.git
-cd Axiom_ai  
+git clone https://github.com/your-username/Axiom_ai.git
+cd Axiom_ai
+
 
 pip install -r requirements.txt
 
