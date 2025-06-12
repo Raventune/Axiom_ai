@@ -47,12 +47,8 @@ Key Components:
 - `should_act()`: Decides if an action should occur based on resonance and internal threshold.
 - Dynamic threshold that adapts based on memory success/failure history.
 
-Pseudocode:
-```python
-if resonance_score >= threshold:
-    act()
-else:
-    wait_and_adjust()
+> **Pseudocode:**  
+> `if resonance_score >= threshold: act() else: wait_and_adjust()`
 
 memory_agent.py
 
