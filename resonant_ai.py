@@ -1,3 +1,53 @@
+"""
+resonant_ai.py
+
+This module implements the ResonantAgent class, which models an AI decision-making
+component based on resonance theory. The agent monitors internal and external
+influences such as celestial data and environmental inputs, maintains a dynamic
+resonance score, and triggers actions when resonance thresholds are met.
+
+The resonance approach allows the AI to evaluate the appropriateness and timing
+of actions dynamically, adjusting thresholds based on past success/failure feedback.
+
+Classes:
+--------
+ResonantAgent
+    Main class that tracks resonance state, evaluates proposed actions,
+    manages thresholds, and integrates feedback from other AI components.
+
+Key Methods:
+------------
+- evaluate_resonance()
+    Computes current resonance level based on internal and external factors.
+
+- check_threshold()
+    Determines if the resonance score crosses the threshold to trigger an action.
+
+- update_threshold(success: bool)
+    Adjusts the threshold dynamically based on recent success or failure.
+
+- propose_action(action_data)
+    Accepts proposed actions and evaluates if conditions are right for execution.
+
+- log_resonance_state()
+    Records the resonance state for debugging and analysis.
+
+Usage:
+------
+Instantiate a ResonantAgent and feed it sensory data or internal states each
+cycle. Use `propose_action()` to test potential actions, which will be accepted
+or deferred based on resonance evaluation.
+
+Example:
+--------
+```python
+from resonant_ai import ResonantAgent
+
+agent = ResonantAgent()
+agent.propose_action({"type": "story_event", "importance": 0.8})
+
+"""
+
 import numpy as np
 import time
 import math
