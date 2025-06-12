@@ -134,4 +134,16 @@ For questions or discussions, please open an issue or contact Raven Wilson.
 
 Thank you for exploring Axiom_ai!
 
+# Axiom AI
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15650859.svg)](https://doi.org/10.5281/zenodo.15650859)
+
+> **Citation**  
+> Raven. (2025). *Raventune/Axiom_ai: Initial Release of Axiom AI Modules (v1.0.0)*. Zenodo. [https://doi.org/10.5281/zenodo.15650859](https://doi.org/10.5281/zenodo.15650859)
+
+---
+
+*Axiom AI* is a modular architecture designed to simulate foundational AGI behavior using resonance-based decision-making and memory-informed state tracking. It provides the groundwork for developing autonomous agents with internal evaluative logic, scalable memory storage, and reflective capacity.
+
+...
 
