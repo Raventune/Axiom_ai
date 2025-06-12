@@ -44,7 +44,7 @@ At the heart of this philosophy is the belief that intelligence isn’t just abo
 
 ## 🧩 Current Modules
 
-- `resonant_agent.py`: The core decision-making agent, integrating external inputs and memory.
+- `resonant_ai.py`: The core decision-making agent, integrating external inputs and memory.
 - `memory_agent.py`: Lightweight memory buffer with weighted decay and feedback analysis.
 - More agents coming soon (Emotion, Storytelling, Survival, Threshold)
 
@@ -55,7 +55,7 @@ At the heart of this philosophy is the belief that intelligence isn’t just abo
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/Axiom_ai.git
+git clone https://github.com/Raventune/Axiom_ai.git
 cd Axiom_ai
 
 
