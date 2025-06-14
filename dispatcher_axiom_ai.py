@@ -24,7 +24,7 @@ class AxiomDispatcher:
 
         # Use raw string for Windows path or replace \ with /
         self.chat_agent = ChatAgent(
-            model_path=r"C:\Users\Raven\Desktop\python projects\axiom_ai\models\openhermes\openhermes-2.5-mistral-7b.Q4_K_S.gguf",
+            model_path=r"models\openhermes\openhermes-2.5-mistral-7b.Q4_K_S.gguf",
             memory_agent=self.memory_agent
         )
 
