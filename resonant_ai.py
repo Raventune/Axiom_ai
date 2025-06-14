@@ -1,53 +1,3 @@
-"""
-resonant_ai.py
-
-This module implements the ResonantAgent class, which models an AI decision-making
-component based on resonance theory. The agent monitors internal and external
-influences such as celestial data and environmental inputs, maintains a dynamic
-resonance score, and triggers actions when resonance thresholds are met.
-
-The resonance approach allows the AI to evaluate the appropriateness and timing
-of actions dynamically, adjusting thresholds based on past success/failure feedback.
-
-Classes:
---------
-ResonantAgent
-    Main class that tracks resonance state, evaluates proposed actions,
-    manages thresholds, and integrates feedback from other AI components.
-
-Key Methods:
-------------
-- evaluate_resonance()
-    Computes current resonance level based on internal and external factors.
-
-- check_threshold()
-    Determines if the resonance score crosses the threshold to trigger an action.
-
-- update_threshold(success: bool)
-    Adjusts the threshold dynamically based on recent success or failure.
-
-- propose_action(action_data)
-    Accepts proposed actions and evaluates if conditions are right for execution.
-
-- log_resonance_state()
-    Records the resonance state for debugging and analysis.
-
-Usage:
-------
-Instantiate a ResonantAgent and feed it sensory data or internal states each
-cycle. Use `propose_action()` to test potential actions, which will be accepted
-or deferred based on resonance evaluation.
-
-Example:
---------
-```python
-from resonant_ai import ResonantAgent
-
-agent = ResonantAgent()
-agent.propose_action({"type": "story_event", "importance": 0.8})
-
-"""
-
 import numpy as np
 import time
 import math
@@ -117,6 +67,9 @@ class ResonantAgent:
             pass
         return 1.0
 
+    def weighted_success_failure_ratio(self, window_seconds=300):
+        return 0.0  # Neutral ratio (no success or failure bias)
+
     def get_fatigue_factor(self):
         # Placeholder for future sensor-based fatigue integration
         return 1.0
@@ -129,15 +82,15 @@ class ResonantAgent:
         adjustments = [self.resonance_score(self.generate_chaos_vector()) for _ in range(3)]
         return sum(adjustments) / 3
 
-    def adjust_threshold_based_on_memory(self):
-        ratio = self.memory.weighted_success_failure_ratio(window_seconds=300)
-        if ratio > 0.1:
-            new_threshold = min(self.threshold_max, self.threshold + self.threshold_step)
-        elif ratio < -0.1:
-            new_threshold = max(self.threshold_min, self.threshold - self.threshold_step)
-        else:
-            new_threshold = self.threshold
-        self.set_threshold(new_threshold)
+    # def adjust_threshold_based_on_memory(self):
+    #    ratio = self.memory.weighted_success_failure_ratio(window_seconds=300)
+    #    if ratio > 0.1:
+    #        new_threshold = min(self.threshold_max, self.threshold + self.threshold_step)
+    #    elif ratio < -0.1:
+    #        new_threshold = max(self.threshold_min, self.threshold - self.threshold_step)
+    #    else:
+    #       new_threshold = self.threshold
+    #   self.set_threshold(new_threshold)
 
     def run_cycle(self):
         moon_f = self.get_moon_phase_factor()
@@ -145,7 +98,8 @@ class ResonantAgent:
         geomag_f = self.get_geomagnetic_factor()
         fatigue_f = self.get_fatigue_factor()
         emotion_f = self.get_emotion_factor()
-
+        brainwave_f = self.get_simulated_brainwave_factor()
+        
         cosmic_patience = moon_f * solar_f * geomag_f * fatigue_f * emotion_f
 
         chaos_vector = self.generate_chaos_vector()
@@ -169,11 +123,11 @@ class ResonantAgent:
                 result["sacred_moment"] = True
 
         else:
-            avg_memory = self.memory.average_memory()
+            # avg_memory = self.memory.average_memory()
             self.state_vector += (0.01 / cosmic_patience) * self.generate_chaos_vector()
             self.state_vector /= np.linalg.norm(self.state_vector)
 
-        self.adjust_threshold_based_on_memory()
+        # self.adjust_threshold_based_on_memory()
 
         if self.debug:
             print(f"[CycleLog] Score: {score:.3f} | Threshold: {self.threshold:.3f} | Patience: {cosmic_patience:.3f} | Resonant: {result['resonance']} | Sacred: {result['sacred_moment']}")
@@ -191,3 +145,9 @@ class ResonantAgent:
 
     def get_average_resonance_memory(self):
         return self.memory.average_memory()
+    
+    def get_simulated_brainwave_factor(self):
+        # Simulate a brainwave signal oscillating between 0.8 and 1.2
+        t = time.time()
+        value = 1.0 + 0.2 * math.sin(t)
+        return value
