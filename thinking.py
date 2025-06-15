@@ -18,11 +18,13 @@ class TinyLlamaSummarizer:
 
 class InnerMonologueAgent:
     def __init__(self, model_path, max_tokens=512, n_threads=8):
+        print("[DEBUG] InnerMonologueAgent initialized")
         self.llm = Llama(model_path=model_path, n_ctx=2048, n_threads=n_threads)
         self.max_tokens = max_tokens
         self.monologue_memory = deque(maxlen=20)
 
     def think(self, initial_input, max_cycles=5, timeout=15):
+        print("[DEBUG] InnerMonologueAgent.think() was triggered")
         self.monologue_memory.clear()
         self.monologue_memory.append(f"User: {initial_input}")
 

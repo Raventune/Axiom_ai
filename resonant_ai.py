@@ -38,7 +38,7 @@ class ResonantAgent:
     def get_moon_phase_factor(self):
         try:
             r = requests.get("https://api.open-meteo.com/v1/astronomy",
-                             params={"latitude": 0.0, "longitude": 0.0, "hourly": "moon_phase"}, timeout=5)
+                            params={"latitude": 0.0, "longitude": 0.0, "hourly": "moon_phase"}, timeout=5)
             if r.ok:
                 phase = r.json()["hourly"]["moon_phase"][0]
                 return 1.0 + 0.5 * math.sin(2 * math.pi * phase)

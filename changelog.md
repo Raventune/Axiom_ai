@@ -34,3 +34,14 @@ Files Updated
     emotion_agent.py — Added quantum-like emotional state logic, resonance-based collapse, decay, and memory tagging.
 
     chat_agent.py — Extended chat() and build_prompt() to accept and use emotional context.
+
+### Added
+
+- Inner monologue support triggered by user input prefixed with `!`, allowing the AI to perform self-reflection cycles.
+- Personality snippet fetching to include recent memory fragments as long-term context in conversations.
+- Improved emotion state handling to ensure AI’s own emotional state is reflected and used during chat responses.
+
+### Fixed
+
+- Corrected emotion context usage to prevent confusion between user emotions and AI’s emotional state.
+- Resolved duplicate logic in `process_input` and `query` methods to streamline input processing and response generation.

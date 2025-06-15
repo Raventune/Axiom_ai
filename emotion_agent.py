@@ -63,7 +63,7 @@ class EmotionAgent:
         self.memory_agent = memory_agent or MemoryAgent()
 
     def update_from_resonance(self, resonance_score, sacred_moment=False):
-        emotion_vector = self.state.collapse_state(resonance_score, sacred_moment)
+        emotion_vector = {k: float(v) for k, v in self.state.collapse_state(resonance_score, sacred_moment).items()}
         self.state.decay_and_stabilize()
 
         metadata = {
@@ -101,4 +101,4 @@ class EmotionAgent:
         return self.state.last_state or "neutral"
 
     def emotion_vector(self):
-        return self.state.center.copy()
+        return {k: float(v) for k, v in self.state.center.items()}

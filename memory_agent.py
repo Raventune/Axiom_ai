@@ -6,6 +6,7 @@ import numpy as np
 import uuid
 import threading
 from datetime import datetime
+from thinking import TinyLlamaSummarizer
 
 class MemoryItem:
     def __init__(self, data, data_type, timestamp=None, weight=1.0, metadata=None, id=None):
@@ -41,7 +42,8 @@ class MemoryItem:
         )
 
 class MemoryAgent:
-    def __init__(self, capacity=1000, decay_rate=0.001, storage_dir="memory_storage", batch_size=5, batch_time_seconds=60):
+    def __init__(self, capacity=1000, decay_rate=0.001, storage_dir="memory_storage", batch_size=5, batch_time_seconds=60, summarizer=None):
+        self._memory_lock = threading.Lock()
         self.capacity = capacity
         self.decay_rate = decay_rate
         self.memory_bank = deque(maxlen=capacity)
@@ -58,6 +60,14 @@ class MemoryAgent:
         self._batch_flush_thread = threading.Thread(target=self._batch_flush_worker, daemon=True)
         self._batch_flush_thread.start()
 
+        # Use passed summarizer or create a default one
+        if summarizer is None:
+            self.summarizer = TinyLlamaSummarizer(
+                model_path=r"models\tinyllama\tinyllama-1.1b-chat-v0.4.q2_k.gguf"
+            )
+        else:
+            self.summarizer = summarizer
+
     def store_memory(self, data, data_type="generic", weight=1.0, metadata=None):
         """Store a memory item with explicit parameters."""
         metadata = metadata or {}
@@ -69,7 +79,8 @@ class MemoryAgent:
             weight=weight,
             metadata=metadata
         )
-        self.memory_bank.append(item)
+        with self._memory_lock:
+            self.memory_bank.append(item)
 
     def get_memories(self, data_type=None, metadata_filter=None, time_window=None, prioritize=False):
         now = time.time()
@@ -163,15 +174,42 @@ class MemoryAgent:
                 return True
         return False
 
+
+
     def decay_memory(self):
+        decayed_items = []
         for item in list(self.memory_bank):
             if item.metadata.get("important", False):
                 continue
             item.weight *= (1 - self.decay_rate)
             if item.weight < 0.01:
-                # Summarization removed here — just remove low weight memory
+                if item.data_type in ["dialogue", "text", "text_file", "emotion_state"]:
+                    decayed_items.append(item)
                 self.memory_bank.remove(item)
-                self.save_index()
+
+        if self.summarizer and decayed_items:
+            text_chunks = [item.data for item in decayed_items if isinstance(item.data, str)]
+            recent_text = "\n".join(text_chunks)
+            if recent_text.strip():
+                summary = self.summarizer.summarize(recent_text)
+
+                timestamps = [item.timestamp for item in decayed_items]
+                metadata = {
+                    "source": "decay",
+                    "summarized_count": len(decayed_items),
+                    "from_timestamp": min(timestamps),
+                    "to_timestamp": max(timestamps)
+                }
+
+                self.store_memory(
+                    data=summary,
+                    data_type="summary",
+                    weight=1.0,
+                    metadata=metadata
+                )
+
+        self.save_index()
+
                 
     def store_tagged_memory(self, tag, data, data_type="emotion_state", weight=1.0, metadata=None):
         """Stores memory with a custom tag in metadata."""
@@ -188,3 +226,23 @@ class MemoryAgent:
                 return item
         return None
 
+    def save_dialogue_memory(self, filename="dialogue_memory.json"):
+        """Save all dialogue memories to a JSON file."""
+        dialogue_memories = [item.to_dict() for item in self.memory_bank if item.data_type == "dialogue"]
+        filepath = os.path.join(self.storage_dir, filename)
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(dialogue_memories, f, indent=2)
+        print(f"Saved {len(dialogue_memories)} dialogue memories to {filepath}")
+
+    def load_dialogue_memory(self, filename="dialogue_memory.json"):
+        """Load dialogue memories from a JSON file into memory_bank."""
+        filepath = os.path.join(self.storage_dir, filename)
+        if os.path.exists(filepath):
+            with open(filepath, "r", encoding="utf-8") as f:
+                dialogue_memories = json.load(f)
+            for d in dialogue_memories:
+                item = MemoryItem.from_dict(d)
+                self.memory_bank.append(item)
+            print(f"Loaded {len(dialogue_memories)} dialogue memories from {filepath}")
+        else:
+            print(f"No dialogue memory file found at {filepath}")
