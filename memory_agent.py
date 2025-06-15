@@ -5,6 +5,7 @@ from collections import deque
 import numpy as np
 import uuid
 import threading
+from datetime import datetime
 
 class MemoryItem:
     def __init__(self, data, data_type, timestamp=None, weight=1.0, metadata=None, id=None):
@@ -57,17 +58,18 @@ class MemoryAgent:
         self._batch_flush_thread = threading.Thread(target=self._batch_flush_worker, daemon=True)
         self._batch_flush_thread.start()
 
-    def store_memory(self, data, data_type="vector", weight=1.0, metadata=None, id=None):
-        if isinstance(data, np.ndarray):
-            filename = f"vector_{int(time.time()*1000)}_{uuid.uuid4().hex}.npy"
-            filepath = os.path.join(self.storage_dir, filename)
-            np.save(filepath, data)
-            data = filename
-            data_type = "vector_file"
-
-        item = MemoryItem(data, data_type, weight=weight, metadata=metadata, id=id)
+    def store_memory(self, data, data_type="generic", weight=1.0, metadata=None):
+        """Store a memory item with explicit parameters."""
+        metadata = metadata or {}
+        timestamp = time.time()
+        item = MemoryItem(
+            data=data,
+            data_type=data_type,
+            timestamp=timestamp,
+            weight=weight,
+            metadata=metadata
+        )
         self.memory_bank.append(item)
-        return item.id
 
     def get_memories(self, data_type=None, metadata_filter=None, time_window=None, prioritize=False):
         now = time.time()
@@ -136,7 +138,7 @@ class MemoryAgent:
         with open(filepath, "a", encoding="utf-8") as f:
             f.write("\n".join(self._text_log_batch) + "\n")
         self.store_memory(data=filename, data_type="text_file", weight=1.0,
-                          metadata={"description": "batched log file", "batch": True})
+                        metadata={"description": "batched log file", "batch": True})
         self._text_log_batch.clear()
         self._last_batch_time = time.time()
 
@@ -170,4 +172,19 @@ class MemoryAgent:
                 # Summarization removed here — just remove low weight memory
                 self.memory_bank.remove(item)
                 self.save_index()
+                
+    def store_tagged_memory(self, tag, data, data_type="emotion_state", weight=1.0, metadata=None):
+        """Stores memory with a custom tag in metadata."""
+        if metadata is None:
+            metadata = {}
+        metadata["tag"] = tag
+        self.store_memory(data=data, data_type=data_type, weight=weight, metadata=metadata)
+    
+    def retrieve_latest_tagged_memory(self, tag):
+        """Fetch the most recent memory with a specific tag."""
+        
+        for item in reversed(self.memory_bank):
+            if item.metadata.get("tag") == tag:
+                return item
+        return None
 

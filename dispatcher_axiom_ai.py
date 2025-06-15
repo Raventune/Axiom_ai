@@ -6,6 +6,8 @@ from memory_agent import MemoryAgent
 from chat_agent import ChatAgent  # import your new chat agent class
 from thinking import TinyLlamaSummarizer, InnerMonologueAgent  # New: separate summarizer and monologue
 from perception_interface import PerceptionInterface
+from emotion_agent import EmotionAgent
+from resonant_ai import ResonantAgent
 class AxiomDispatcher:
     def __init__(
         self,
@@ -21,6 +23,8 @@ class AxiomDispatcher:
         self.memory_path = memory_path
         self.memory_log = self.load_memory()
         self.memory_agent = MemoryAgent()
+        self.resonant_agent = ResonantAgent()
+        self.emotion_agent = EmotionAgent(memory_agent=self.memory_agent)
 
         # Use raw string for Windows path or replace \ with /
         self.chat_agent = ChatAgent(
@@ -118,7 +122,8 @@ class AxiomDispatcher:
         )
 
         try:
-            dialogue_response = self.chat_agent.chat(user_input)
+            response = self.chat_agent.chat(emotion_context, user_input)
+
         except Exception as e:
             return f"Error in local ChatAgent chat: {e}"
 
@@ -165,7 +170,69 @@ class AxiomDispatcher:
             if "why did you" in lowered or "why would you" in lowered:
                 tags.append("reflective_prompt")
 
-            return tags
+
+    def process_input(self, user_input: str) -> str:
+        # Check for inner monologue trigger
+        trigger_inner = False
+        if user_input.startswith("!"):
+            user_input = user_input[1:].strip()
+            trigger_inner = True
+
+    # Run resonance cycle
+        resonant_result = self.resonant_agent.run_cycle()
+        resonance_score = resonant_result.get("score", 0)
+        sacred_moment = resonant_result.get("sacred_moment", False)
+
+    # Update emotion agent
+        current_emotion = self.emotion_agent.update_from_resonance(resonance_score, sacred_moment)
+        emotion_vector = self.emotion_agent.emotion_vector()
+
+    # Build emotion context string
+        emotion_context = f"Emotional state: {current_emotion}. Emotion levels: {emotion_vector}"
+
+    # Generate response from chat agent
+        try:
+            response = self.chat_agent.chat(emotion_context, user_input)
+        except Exception as e:
+            return f"Error generating response: {e}"
+
+    # Store full interaction in memory
+        self.memory_log.append({
+            "timestamp": datetime.now().isoformat(),
+            "role": "user",
+            "content": user_input
+        })
+        self.memory_log.append({
+            "timestamp": datetime.now().isoformat(),
+            "role": "assistant",
+            "content": response
+        })
+        self.save_memory()
+
+    # Store chat + emotional metadata
+        self.memory_agent.store_tagged_memory(
+            tag="chat",
+            data={"user_input": user_input, "ai_response": response},
+            metadata={"emotion": current_emotion, "resonance_score": resonance_score, "sacred_moment": sacred_moment}
+        )
+
+    # If monologue triggered, run it now
+        if trigger_inner:
+            self.inner_monologue_active = True
+            inner_response = self.run_inner_monologue(response)
+            self.inner_monologue_active = False
+            self.memory_log.append({
+                "timestamp": datetime.now().isoformat(),
+                "role": "inner_monologue",
+                "content": inner_response
+            })
+            self.save_memory()
+            return f"{response}\n\n[Inner Monologue]\n{inner_response}"
+
+    # Optionally summarize memory window after each response
+        self.summarize_recent_memories()
+
+        return response
 
 
 if __name__ == "__main__":
@@ -182,6 +249,6 @@ if __name__ == "__main__":
         user_input, trigger_inner = dispatcher.preprocess_input(user_input)
 
 
-        response = dispatcher.query(user_input, trigger_inner_monologue=trigger_inner)
+        response = dispatcher.process_input(user_input)
         print("Axiom AI:", response)
         

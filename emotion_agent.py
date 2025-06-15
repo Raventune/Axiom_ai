@@ -1,132 +1,104 @@
 import random
 import json
+import time
 from datetime import datetime
+import numpy as np
+from memory_agent import MemoryAgent
 
 class EmotionState:
-    def __init__(self):
-        self.center = []  # List of dominant emotions
-        self.background = {}  # {emotion: intensity (0–1)}
-        self.updated_at = datetime.utcnow().isoformat()
-        self.valence = 0.0  # Pleasantness
-        self.arousal = 0.0  # Energy level
-        self.metadata = {}
+    def __init__(self, initial_emotions=None):
+        # Allow custom set of emotions or use default
+        if initial_emotions is None:
+            initial_emotions = {
+                "joy": 0.25,
+                "sadness": 0.25,
+                "anger": 0.25,
+                "calm": 0.25
+            }
+        self.center = initial_emotions
+        self.last_state = None
 
-    def to_dict(self):
-        return {
-            "center": self.center,
-            "background": self.background,
-            "valence": self.valence,
-            "arousal": self.arousal,
-            "metadata": self.metadata,
-            "updated_at": self.updated_at,
-        }
+    def collapse_state(self, resonance_score, sacred_moment=False):
+        emotions = list(self.center.keys())
+        probabilities = np.array([self.center[e] for e in emotions])
 
-    def to_json(self):
-        return json.dumps(self.to_dict())
+        if sacred_moment:
+            for e in ["joy", "calm"]:
+                if e in self.center:
+                    probabilities[emotions.index(e)] += 0.1
 
-    def update_from_inputs(self, inputs):
-        # Placeholder logic: real version would use appraisals
-        perceived_threat = inputs.get("threat_level", 0)
-        perceived_success = inputs.get("reward_level", 0)
-        frustration = inputs.get("low_patience", 0)
+        probabilities /= probabilities.sum()
 
-        self.background["fear"] = min(1.0, perceived_threat * 0.8)
-        self.background["anger"] = min(1.0, frustration * 0.7)
-        self.background["joy"] = min(1.0, perceived_success * 0.6)
+        adjusted = {}
+        for e in emotions:
+            base = probabilities[emotions.index(e)]
+            if e in ["joy", "calm"]:
+                adjusted[e] = base + 0.2 * resonance_score
+            else:
+                adjusted[e] = base * (1 - resonance_score)
 
-        # Decide dominant emotions
-        candidates = sorted(self.background.items(), key=lambda x: x[1], reverse=True)
-        self.center = [e for e, v in candidates if v > 0.3][:3]
+        total = sum(adjusted.values())
+        for e in adjusted:
+            adjusted[e] /= total
 
-        # Simple affect model
-        self.valence = (self.background.get("joy", 0) - self.background.get("fear", 0) - self.background.get("anger", 0))
-        self.arousal = max(self.background.values(), default=0)
+        self.center = adjusted
+        self.last_state = max(adjusted, key=adjusted.get)
+        return self.center
 
-        self.updated_at = datetime.utcnow().isoformat()
 
-    def tag_memory(self):
-        return {
-            "emotion_center": self.center,
-            "emotion_background": self.background,
-            "valence": self.valence,
-            "arousal": self.arousal,
-            "timestamp": self.updated_at,
-        }
+    def decay_and_stabilize(self, factor=0.95):
+        """Decay emotion weights to introduce memory persistence."""
+        for key in self.center:
+            self.center[key] *= factor
+        if self.last_state:
+            self.center[self.last_state] += 0.1
+        total = sum(self.center.values())
+        for key in self.center:
+            self.center[key] /= total
 
-class EmotionPacket:
-    def __init__(self, state):
-        self.emotion = state.to_dict()
-        self.urgency = self._calculate_urgency(state)
-        self.stability = self._calculate_stability(state)
-
-    def _calculate_urgency(self, state):
-        return min(1.0, state.arousal + 0.3 if "anger" in state.center else 0.2)
-
-    def _calculate_stability(self, state):
-        instability = state.background.get("fear", 0) + state.background.get("anger", 0)
-        return round(1.0 - min(1.0, instability), 2)
-
-    def to_dict(self):
-        return {
-            "emotion": self.emotion,
-            "urgency": self.urgency,
-            "stability": self.stability,
-        }
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
 
 class EmotionAgent:
-    def __init__(self, dispatcher):
+    def __init__(self, memory_agent=None):
         self.state = EmotionState()
-        self.dispatcher = dispatcher  # Reference to the dispatcher object
+        self.memory_agent = memory_agent or MemoryAgent()
 
-    def process_cycle(self, external_inputs=None):
-        # 1. Request context info from dispatcher
-        context = self.dispatcher.get_context()  # e.g., returns dict with patience, threshold
+    def update_from_resonance(self, resonance_score, sacred_moment=False):
+        emotion_vector = self.state.collapse_state(resonance_score, sacred_moment)
+        self.state.decay_and_stabilize()
 
-        # 2. Merge external inputs with context
-        input_data = external_inputs or {}
-        input_data.update(context)
-
-        # 3. Update emotion state based on combined inputs
-        self.state.update_from_inputs(input_data)
-
-        # 4. Prepare packet and send back to dispatcher
-        packet = EmotionPacket(self.state)
-        self.dispatcher.receive_emotion_packet(packet.to_dict())
-
-    def get_emotion_state(self):
-        return self.state.to_dict()
-
-    def export_for_memory(self):
-        return self.state.tag_memory()
-
-    def export_for_dispatcher(self):
-        packet = EmotionPacket(self.state)
-        return packet.to_dict()
-
-# Example Dispatcher stub for testing
-
-class Dispatcher:
-    def __init__(self):
-        self.current_patience = 0.5
-        self.current_threshold = 0.3
-
-    def get_context(self):
-        return {
-            "low_patience": self.current_patience,
-            "threshold": self.current_threshold,
+        metadata = {
+            "emotion_vector": emotion_vector,
+            "dominant_emotion": self.state.last_state,
+            "resonance_score": resonance_score,
+            "sacred": sacred_moment
         }
+        self.memory_agent.store_tagged_memory(
+            tag="emotion",
+            data=emotion_vector,
+            data_type="emotion_vector",
+            metadata=metadata
+        )
 
-    def receive_emotion_packet(self, packet):
-        print("Dispatcher received emotion packet:")
-        print(json.dumps(packet, indent=2))
+        return self.state.last_state
 
 
-# Example usage
+        # Log into memory
+        metadata = {
+            "emotion": emotion,
+            "resonance_score": resonance_score,
+            "sacred": sacred_moment
+        }
+        self.memory_agent.store_tagged_memory(
+            tag="emotion",
+            data=emotion,
+            data_type="emotion_state",
+            metadata=metadata
+        )
 
-if __name__ == "__main__":
-    dispatcher = Dispatcher()
-    agent = EmotionAgent(dispatcher)
-    agent.process_cycle({"threat_level": 0.7, "reward_level": 0.1})
+        return emotion
+
+    def current_emotion(self):
+        return self.state.last_state or "neutral"
+
+    def emotion_vector(self):
+        return self.state.center.copy()

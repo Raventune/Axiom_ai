@@ -195,3 +195,5 @@ cython_debug/
 # Ignore model files
 models/*.gguf
 models/**/*.gguf
+memory_storage/
+axiom_memory.json
