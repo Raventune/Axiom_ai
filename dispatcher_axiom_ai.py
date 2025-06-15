@@ -5,7 +5,7 @@ from datetime import datetime
 from memory_agent import MemoryAgent
 from chat_agent import ChatAgent  # import your new chat agent class
 from thinking import TinyLlamaSummarizer, InnerMonologueAgent  # New: separate summarizer and monologue
-
+from perception_interface import PerceptionInterface
 class AxiomDispatcher:
     def __init__(
         self,
@@ -39,7 +39,7 @@ class AxiomDispatcher:
         self.inner_monologue_seed_sent = False
         self.max_inner_cycles = max_inner_cycles
         self.inner_cycle_timeout = inner_cycle_timeout
-
+        self.perception = PerceptionInterface()
     def load_seed_as_prompt(self, seed_path):
         try:
             with open(seed_path, "r") as f:
@@ -96,11 +96,18 @@ class AxiomDispatcher:
             summary = self.summarizer.summarize(combined)
             if summary:
                 self.memory_agent.store_memory(summary, data_type="summary")
+                
+    def preprocess_input(self, user_input):
+        if user_input.startswith("!"):
+            return user_input[1:].strip(), True
+        return user_input.strip(), False
 
     def query(self, user_input, trigger_inner_monologue=False):
+        tags = self.tag_input(user_input)
+        event = self.perception.perceive(user_input, source="user", tags=tags)
         memory_snippets = "\n".join([f"[{m['timestamp']}] {m['role'].capitalize()}: {m['content']}" for m in self.memory_log[-5:]])
         personality_snippets = self.fetch_recent_personality_snippets()
-
+    
         combined_prompt = (
             self.seed_prompt
             + "\n\nSHORT-TERM MEMORY:\n"
@@ -157,9 +164,22 @@ if __name__ == "__main__":
         if user_input.lower() in ["exit", "quit"]:
             break
 
-        trigger_inner = user_input.startswith("!")
-        if trigger_inner:
-            user_input = user_input[1:].strip()
+        user_input, trigger_inner = dispatcher.preprocess_input(user_input)
+
 
         response = dispatcher.query(user_input, trigger_inner_monologue=trigger_inner)
         print("Axiom AI:", response)
+    def tag_input(self, user_input):
+        tags = []
+        lowered = user_input.lower()
+
+        if "remember" in lowered or "can you save" in lowered:
+            tags.append("memory_request")
+
+        if "how do you feel" in lowered or "do you feel" in lowered:
+            tags.append("emotional_probe")
+
+        if "why did you" in lowered or "why would you" in lowered:
+            tags.append("reflective_prompt")
+
+        return tags
