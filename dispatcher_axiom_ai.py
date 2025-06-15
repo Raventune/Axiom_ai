@@ -151,6 +151,21 @@ class AxiomDispatcher:
 
         self.summarize_recent_memories()
         return dialogue_response
+    
+    def tag_input(self, user_input):
+            tags = []
+            lowered = user_input.lower()
+
+            if "remember" in lowered or "can you save" in lowered:
+                tags.append("memory_request")
+
+            if "how do you feel" in lowered or "do you feel" in lowered:
+                tags.append("emotional_probe")
+
+            if "why did you" in lowered or "why would you" in lowered:
+                tags.append("reflective_prompt")
+
+            return tags
 
 
 if __name__ == "__main__":
@@ -169,17 +184,4 @@ if __name__ == "__main__":
 
         response = dispatcher.query(user_input, trigger_inner_monologue=trigger_inner)
         print("Axiom AI:", response)
-    def tag_input(self, user_input):
-        tags = []
-        lowered = user_input.lower()
-
-        if "remember" in lowered or "can you save" in lowered:
-            tags.append("memory_request")
-
-        if "how do you feel" in lowered or "do you feel" in lowered:
-            tags.append("emotional_probe")
-
-        if "why did you" in lowered or "why would you" in lowered:
-            tags.append("reflective_prompt")
-
-        return tags
+        
