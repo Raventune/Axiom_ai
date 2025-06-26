@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import math
 import requests
 from memory_agent import MemoryAgent
@@ -22,39 +21,76 @@ class ResonantAgent:
         self.debug = True
 
     def _init_state(self):
-        vec = np.random.rand(5)
+        vec = np.random.rand(4)
         return vec / np.linalg.norm(vec)
 
     def reset_state(self):
         self.state_vector = self._init_state()
-
-    def generate_chaos_vector(self):
-        vec = np.random.normal(0, 1, size=5)
-        return vec / np.linalg.norm(vec)
 
     def resonance_score(self, vector, weight=1.0):
         return weight * np.dot(self.state_vector, vector)
 
     def get_moon_phase_factor(self):
         try:
-            r = requests.get("https://api.open-meteo.com/v1/astronomy",
-                            params={"latitude": 0.0, "longitude": 0.0, "hourly": "moon_phase"}, timeout=5)
+            r = requests.get("https://api.open-meteo.com/v1/forecast", params={
+                "latitude": 0.0,
+                "longitude": 0.0,
+                "daily": "moon_phase",
+                "timezone": "UTC"
+            }, timeout=5)
+
             if r.ok:
-                phase = r.json()["hourly"]["moon_phase"][0]
-                return 1.0 + 0.5 * math.sin(2 * math.pi * phase)
-        except:
-            pass
-        return 1.0
+                phase_list = r.json().get("daily", {}).get("moon_phase", [])
+                if phase_list:
+                    phase = phase_list[0]  # raw 0 to 1
+                    scaled_phase = 0.1 + 0.9 * phase  # scale 0-1 to 0.1-1.0
+                    if self.debug:
+                        print(f"[MoonPhase] Raw: {phase:.3f}, Scaled: {scaled_phase:.3f}")
+                    return scaled_phase
+        except Exception as e:
+            print(f"[MoonPhase] Error: {e}")
+        return 0.55  # fallback neutral value around mid range
 
     def get_solar_activity_factor(self):
         try:
-            r = requests.get("https://services.swpc.noaa.gov/products/alerts.json", timeout=5)
-            if r.ok and isinstance(r.json(), list):
-                level = r.json()[-1].get("message_type", "GREEN")
-                return {"GREEN": 1.0, "YELLOW": 0.9, "ORANGE": 0.8, "RED": 0.7}.get(level, 1.0)
-        except:
-            pass
-        return 1.0
+            r = requests.get("https://services.swpc.noaa.gov/json/solar-radio-flux.json", timeout=5)
+            if r.ok and isinstance(r.json(), list) and len(r.json()) > 0:
+                data = r.json()
+
+                target_freq = 2800  # MHz (approximate F10.7 frequency)
+                flux_values = []
+
+                for station in data:
+                    details = station.get("details", [])
+                    # Find flux at closest frequency to target_freq
+                    closest_detail = None
+                    min_diff = float('inf')
+                    for detail in details:
+                        freq = detail.get("frequency", 0)
+                        diff = abs(freq - target_freq)
+                        if diff < min_diff:
+                            min_diff = diff
+                            closest_detail = detail
+                    if closest_detail and "flux" in closest_detail:
+                        flux_values.append(float(closest_detail["flux"]))
+
+                if flux_values:
+                    avg_flux = sum(flux_values) / len(flux_values)
+                    min_flux = 65.0
+                    max_flux = 300.0
+                    scaled_factor = (avg_flux - min_flux) / (max_flux - min_flux)
+                    scaled_factor = max(0.1, min(scaled_factor, 1.0))
+
+                    if self.debug:
+                        print(f"[SolarRadioFlux] Avg Flux: {avg_flux:.1f}, Scaled Factor: {scaled_factor:.3f}")
+
+                    return scaled_factor, "F10.7"
+
+        except Exception as e:
+            print(f"[SolarRadioFlux] Error: {e}")
+
+        return 1.0, "UNKNOWN"
+
 
     def get_geomagnetic_factor(self):
         try:
@@ -62,10 +98,13 @@ class ResonantAgent:
             if r.ok and isinstance(r.json(), list):
                 data = r.json()[-1]
                 kp = float(data[1])
-                return 1.0 + (kp / 15.0)
+                kp_normalized = min(kp, 9.0) / 9.0
+                factor = 1.0 - 0.9 * kp_normalized
+                factor = max(factor, 0.1)
+                return factor, kp
         except:
             pass
-        return 1.0
+        return 1.0, 0.0
 
     def weighted_success_failure_ratio(self, window_seconds=300):
         return 0.0  # Neutral ratio (no success or failure bias)
@@ -74,36 +113,19 @@ class ResonantAgent:
         # Placeholder for future sensor-based fatigue integration
         return 1.0
 
-    def get_emotion_factor(self):
-        # Placeholder for EmotionAgent input
-        return 1.0
-
     def reevaluate_decision(self):
         adjustments = [self.resonance_score(self.generate_chaos_vector()) for _ in range(3)]
         return sum(adjustments) / 3
 
-    # def adjust_threshold_based_on_memory(self):
-    #    ratio = self.memory.weighted_success_failure_ratio(window_seconds=300)
-    #    if ratio > 0.1:
-    #        new_threshold = min(self.threshold_max, self.threshold + self.threshold_step)
-    #    elif ratio < -0.1:
-    #        new_threshold = max(self.threshold_min, self.threshold - self.threshold_step)
-    #    else:
-    #       new_threshold = self.threshold
-    #   self.set_threshold(new_threshold)
-
     def run_cycle(self):
-        moon_f = self.get_moon_phase_factor()
-        solar_f = self.get_solar_activity_factor()
-        geomag_f = self.get_geomagnetic_factor()
-        fatigue_f = self.get_fatigue_factor()
-        emotion_f = self.get_emotion_factor()
-        brainwave_f = self.get_simulated_brainwave_factor()
-        
-        cosmic_patience = moon_f * solar_f * geomag_f * fatigue_f * emotion_f
+        factors = self.get_cosmic_factors()
 
-        chaos_vector = self.generate_chaos_vector()
-        score = self.resonance_score(chaos_vector)
+        # Only multiply numeric factors for patience calculation
+        numeric_factors = [factors["moon"], factors["solar"], factors["geomagnetic"], factors["fatigue"]]
+        cosmic_patience = np.prod(numeric_factors)
+
+        cosmic_vector = self.generate_cosmic_vectors()
+        score = self.resonance_score(cosmic_vector)
 
         result = {
             "score": score,
@@ -114,20 +136,16 @@ class ResonantAgent:
         }
 
         if score > self.threshold:
-            self.state_vector = (self.state_vector + chaos_vector) / 2
+            self.state_vector = (self.state_vector + cosmic_vector) / 2
             self.state_vector /= np.linalg.norm(self.state_vector)
             self.memory.store_memory(self.state_vector)
             result["resonance"] = True
-
             if score > 0.99 and cosmic_patience > 1.3:
                 result["sacred_moment"] = True
-
         else:
-            # avg_memory = self.memory.average_memory()
-            self.state_vector += (0.01 / cosmic_patience) * self.generate_chaos_vector()
+            safe_patience = cosmic_patience if cosmic_patience > 0 else 0.01
+            self.state_vector += (0.01 / safe_patience) * cosmic_vector
             self.state_vector /= np.linalg.norm(self.state_vector)
-
-        # self.adjust_threshold_based_on_memory()
 
         if self.debug:
             print(f"[CycleLog] Score: {score:.3f} | Threshold: {self.threshold:.3f} | Patience: {cosmic_patience:.3f} | Resonant: {result['resonance']} | Sacred: {result['sacred_moment']}")
@@ -145,9 +163,43 @@ class ResonantAgent:
 
     def get_average_resonance_memory(self):
         return self.memory.average_memory()
-    
-    def get_simulated_brainwave_factor(self):
-        # Simulate a brainwave signal oscillating between 0.8 and 1.2
-        t = time.time()
-        value = 1.0 + 0.2 * math.sin(t)
-        return value
+
+    def get_cosmic_factors(self):
+        moon = self.get_moon_phase_factor()
+
+        # Get detailed solar activity from solar radio flux data
+        solar_factor, solar_level = self.get_solar_activity_factor()
+
+        geo_factor, kp = self.get_geomagnetic_factor()
+        fatigue = self.get_fatigue_factor()
+
+        # Clamp moon factor to [0.1, 1.0]
+        moon = max(min(moon, 1.0), 0.1)
+
+        # Clamp solar factor to [0.1, 1.0]
+        solar_factor = max(min(solar_factor, 1.0), 0.1)
+
+        # Normalize geomagnetic factor to [0.1, 1.0]
+        geo_factor = max(min(geo_factor, 1.0), 0.1)
+
+        # Clamp fatigue to [0.1, 1.0]
+        fatigue = max(min(fatigue, 1.0), 0.1)
+
+        return {
+            "moon": moon,
+            "solar": solar_factor,
+            "solar_level": solar_level,
+            "geomagnetic": geo_factor,
+            "kp": kp,
+            "fatigue": fatigue
+        }
+
+    def generate_cosmic_vectors(self):
+        factors = self.get_cosmic_factors()
+        vec = np.array([
+            factors["moon"],
+            factors["solar"],
+            factors["geomagnetic"],
+            factors["fatigue"]
+        ])
+        return vec / np.linalg.norm(vec)

@@ -246,3 +246,66 @@ class MemoryAgent:
             print(f"Loaded {len(dialogue_memories)} dialogue memories from {filepath}")
         else:
             print(f"No dialogue memory file found at {filepath}")
+    
+    def handle_instruction(self, command: dict):
+        """Process high-level dispatcher commands into memory actions."""
+        if not isinstance(command, dict):
+            print("[MemoryAgent] Invalid command format. Expected a dictionary.")
+            return None
+
+        action = command.get("action")
+        if not action:
+            print("[MemoryAgent] No 'action' specified in command.")
+            return None
+
+        try:
+            if action == "store":
+                tag = command.get("tag")
+                return self.store_tagged_memory(
+                    tag=tag,
+                    data=command.get("data"),
+                    data_type=command.get("data_type", "generic"),
+                    weight=command.get("weight", 1.0),
+                    metadata=command.get("metadata", {})
+                )
+
+            elif action == "retrieve":
+                filters = command.get("filters", {})
+                return self.get_memories(
+                    data_type=filters.get("data_type"),
+                    metadata_filter=filters.get("metadata"),
+                    time_window=filters.get("time_window"),
+                    prioritize=command.get("prioritize", False)
+                )
+
+            elif action == "modify":
+                memory_id = command.get("memory_id")
+                new_metadata = command.get("metadata", {})
+                return self.enrich_metadata(memory_id, new_metadata)
+
+            elif action == "mark_important":
+                return self.mark_memory_important(command.get("memory_id"))
+
+            elif action == "unmark_important":
+                return self.unmark_memory_important(command.get("memory_id"))
+
+            elif action == "summarize":
+                return self.get_recent_memories_summary(
+                    time_window=command.get("time_window", 300)
+                )
+
+            elif action == "decay":
+                return self.decay_memory()
+
+            elif action == "latest_tag":
+                return self.retrieve_latest_tagged_memory(
+                    tag=command.get("tag")
+                )
+
+            else:
+                print(f"[MemoryAgent] Unknown action: {action}")
+                return None
+
+        except Exception as e:
+            print(f"[MemoryAgent] Error handling instruction: {e}")
+            return None
